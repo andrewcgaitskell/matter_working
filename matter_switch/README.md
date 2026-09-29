@@ -4,13 +4,17 @@ activate it
 
 source ~/.espressif/tools/activate_idf_v5.4.1.sh
 
+copy the code from the generic_switch example
+
 change to the project folder
 
 install matter dependency
 
 idf.py add-dependency "espressif/esp_matter=1.4.2"
 
-fresh build
+change the two CMakeLists.txt files to match the matter_light example
+
+perform fresh build
 
 rm -rf build sdkconfig
 
