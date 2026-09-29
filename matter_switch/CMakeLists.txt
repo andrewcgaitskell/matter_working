@@ -2,35 +2,26 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
-if(NOT DEFINED ENV{ESP_MATTER_PATH})
-    message(FATAL_ERROR "Please set ESP_MATTER_PATH to the path of esp-matter repo")
-endif(NOT DEFINED ENV{ESP_MATTER_PATH})
-
 set(PROJECT_VER "1.0")
 set(PROJECT_VER_NUMBER 1)
 
-set(ESP_MATTER_PATH $ENV{ESP_MATTER_PATH})
-set(MATTER_SDK_PATH ${ESP_MATTER_PATH}/connectedhomeip/connectedhomeip)
-
 # This should be done before using the IDF_TARGET variable.
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-include(${ESP_MATTER_PATH}/examples/common/cmake_common/components_include.cmake)
 
 set(EXTRA_COMPONENT_DIRS
-    "${ESP_MATTER_PATH}/examples/common"
-    "${MATTER_SDK_PATH}/config/esp32/components"
-    "${ESP_MATTER_PATH}/components"
+    "../common/app_reset"
     ${extra_components_dirs_append})
 
-project(generic_switch)
-if(CONFIG_IDF_TARGET_ESP32C2)
-    include(relinker)
+project(managed_component_switch)
+
+# WARNING: This is just an example for using key for decrypting the encrypted OTA image
+# Please do not use it as is.
+if(CONFIG_ENABLE_ENCRYPTED_OTA)
+    target_add_binary_data(light.elf "esp_image_encryption_key.pem" TEXT)
 endif()
 
-idf_build_set_property(CXX_COMPILE_OPTIONS "-std=gnu++17;-Os;-DCHIP_HAVE_CONFIG_H;-Wno-overloaded-virtual" APPEND)
-
-if (CONFIG_ENABLE_ESP_INSIGHTS_TRACE)
-    target_add_binary_data(generic_switch.elf "insights_auth_key.txt" TEXT)
+if(CONFIG_IDF_TARGET_ESP32C2)
+    include(relinker)
 endif()
 
 idf_build_set_property(CXX_COMPILE_OPTIONS "-std=gnu++17;-Os;-DCHIP_HAVE_CONFIG_H" APPEND)
