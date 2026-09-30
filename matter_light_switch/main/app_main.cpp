@@ -116,7 +116,16 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
     }
     break;
 
+   case chip::DeviceLayer::DeviceEventType::kFabricRemoved:
+        ESP_LOGI(TAG, "Fabric removed");
+        if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0) {
+            ESP_LOGI(TAG, "Last fabric removed, factory resetting");
+            esp_matter::factory_reset();
+        }
+        break;
+       
 
+       
     default:
         break;
     }
