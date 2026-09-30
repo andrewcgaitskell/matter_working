@@ -223,9 +223,11 @@ extern "C" void app_main()
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
-    /* Call for Boot button */
-    err = create_button(NULL, node);
-    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to create generic switch button"));
+    /* D10 button on XIAO ESP32-C6 (GPIO18) */
+    static struct gpio_button d10_button;   // must be static, see below
+    d10_button.GPIO_PIN_VALUE = GPIO_NUM_18;
+    err = create_button(&d10_button, node);
+    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to create D10 switch"));
 
     /* Use the code snippet commented below to create more physical buttons. */
 
