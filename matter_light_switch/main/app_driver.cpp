@@ -23,6 +23,11 @@
 #include <app/server/Server.h>
 #include <lib/core/Optional.h>
 
+#include "iot_button.h"
+#include "button_gpio.h"
+
+#define TOUCH_GPIO GPIO_NUM_18   // XIAO ESP32-C6 D10
+
 #ifdef CONFIG_SUBSCRIBE_TO_ON_OFF_SERVER_AFTER_BINDING
 #include <app/AttributePathParams.h>
 #include <app/ConcreteAttributePath.h>
@@ -317,11 +322,15 @@ static void app_driver_button_toggle_cb(void *arg, void *data)
 
 app_driver_handle_t app_driver_switch_init()
 {
-    /* Initialize button */
-
-    button_handle_t btns[BSP_BUTTON_NUM];
-    ESP_ERROR_CHECK(bsp_iot_button_create(btns, NULL, BSP_BUTTON_NUM));
-    ESP_ERROR_CHECK(iot_button_register_cb(btns[0], BUTTON_PRESS_DOWN, NULL, app_driver_button_toggle_cb, NULL));
+    /* Touch module on D10: output goes HIGH when touched */
+    const button_config_t btn_cfg = {0};
+    const button_gpio_config_t gpio_cfg = {
+        .gpio_num = TOUCH_GPIO,
+        .active_level = 1,
+    };
+    button_handle_t btn = NULL;
+    ESP_ERROR_CHECK(iot_button_new_gpio_device(&btn_cfg, &gpio_cfg, &btn));
+    ESP_ERROR_CHECK(iot_button_register_cb(btn, BUTTON_PRESS_DOWN, NULL, app_driver_button_toggle_cb, NULL));
 
     /* Other initializations */
 #if CONFIG_ENABLE_CHIP_SHELL
@@ -330,5 +339,5 @@ app_driver_handle_t app_driver_switch_init()
     client::set_request_callback(app_driver_client_callback,
                                  app_driver_client_group_invoke_command_callback, NULL);
 
-    return (app_driver_handle_t)btns[0];
+    return (app_driver_handle_t)btn;
 }
