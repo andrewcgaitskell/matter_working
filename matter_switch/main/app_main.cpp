@@ -14,6 +14,8 @@
 #include <esp_matter_console.h>
 #include <esp_matter_ota.h>
 
+#include <app/server/Server.h>
+
 #include <common_macros.h>
 #include <enable_esp_insights.h>
 #include <app_priv.h>
@@ -93,7 +95,15 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
     case chip::DeviceLayer::DeviceEventType::kCommissioningWindowClosed:
         ESP_LOGI(TAG, "Commissioning window closed");
         break;
-
+       
+    case chip::DeviceLayer::DeviceEventType::kFabricRemoved:
+        ESP_LOGI(TAG, "Fabric removed");
+        if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0) {
+            ESP_LOGI(TAG, "Last fabric removed, factory resetting");
+            esp_matter::factory_reset();
+        }
+        break;
+       
     default:
         break;
     }
