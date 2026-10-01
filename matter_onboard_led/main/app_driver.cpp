@@ -15,6 +15,11 @@
 
 #include <app_priv.h>
 
+/* added to enable onboard led to be controlled */
+
+#include <driver/gpio.h>
+
+
 using namespace chip::app::Clusters;
 using namespace esp_matter;
 
@@ -38,55 +43,50 @@ static esp_err_t app_driver_light_set_power(led_indicator_handle_t handle, esp_m
 #endif
 }
 
-static esp_err_t app_driver_light_set_brightness(led_indicator_handle_t handle, esp_matter_attr_val_t *val)
+/* deleted saturation and temperature functions for onboard led control */
+
+/* added from here for onboard led control */
+
+#define LED_GPIO     GPIO_NUM_15   // XIAO ESP32-C6 user LED, active low
+#define LED_ON_LEVEL 0
+
+static esp_err_t app_driver_light_set_power(esp_matter_attr_val_t *val)
 {
-    int value = REMAP_TO_RANGE(val->val.u8, MATTER_BRIGHTNESS, STANDARD_BRIGHTNESS);
-#if CONFIG_BSP_LEDS_NUM > 0
-    return led_indicator_set_brightness(handle, value);
-#else
-    ESP_LOGI(TAG, "LED set brightness: %d", value);
+    gpio_set_level(LED_GPIO, val->val.b ? LED_ON_LEVEL : !LED_ON_LEVEL);
     return ESP_OK;
-#endif
 }
 
-static esp_err_t app_driver_light_set_hue(led_indicator_handle_t handle, esp_matter_attr_val_t *val)
+esp_err_t app_driver_attribute_update(app_driver_handle_t driver_handle, uint16_t endpoint_id, uint32_t cluster_id,
+                                      uint32_t attribute_id, esp_matter_attr_val_t *val)
 {
-    int value = REMAP_TO_RANGE(val->val.u8, MATTER_HUE, STANDARD_HUE);
-#if CONFIG_BSP_LEDS_NUM > 0
-    led_indicator_ihsv_t hsv;
-    hsv.value = led_indicator_get_hsv(handle);
-    hsv.h = value;
-    return led_indicator_set_hsv(handle, hsv.value);
-#else
-    ESP_LOGI(TAG, "LED set hue: %d", value);
+    if (endpoint_id == light_endpoint_id && cluster_id == OnOff::Id &&
+        attribute_id == OnOff::Attributes::OnOff::Id) {
+        return app_driver_light_set_power(val);
+    }
     return ESP_OK;
-#endif
 }
 
-static esp_err_t app_driver_light_set_saturation(led_indicator_handle_t handle, esp_matter_attr_val_t *val)
+esp_err_t app_driver_light_set_defaults(uint16_t endpoint_id)
 {
-    int value = REMAP_TO_RANGE(val->val.u8, MATTER_SATURATION, STANDARD_SATURATION);
-#if CONFIG_BSP_LEDS_NUM > 0
-    led_indicator_ihsv_t hsv;
-    hsv.value = led_indicator_get_hsv(handle);
-    hsv.s = value;
-    return led_indicator_set_hsv(handle, hsv.value);
-#else
-    ESP_LOGI(TAG, "LED set saturation: %d", value);
-    return ESP_OK;
-#endif
+    esp_matter_attr_val_t val = esp_matter_invalid(NULL);
+    attribute_t *attribute = attribute::get(endpoint_id, OnOff::Id, OnOff::Attributes::OnOff::Id);
+    attribute::get_val(attribute, &val);
+    return app_driver_light_set_power(&val);
 }
 
-static esp_err_t app_driver_light_set_temperature(led_indicator_handle_t handle, esp_matter_attr_val_t *val)
+app_driver_handle_t app_driver_light_init()
 {
-    uint32_t value = REMAP_TO_RANGE_INVERSE(val->val.u16, STANDARD_TEMPERATURE_FACTOR);
-#if CONFIG_BSP_LEDS_NUM > 0
-    return led_indicator_set_color_temperature(handle, value);
-#else
-    ESP_LOGI(TAG, "LED set temperature: %ld", value);
-    return ESP_OK;
-#endif
+    gpio_config_t cfg = {};
+    cfg.pin_bit_mask = 1ULL << LED_GPIO;
+    cfg.mode = GPIO_MODE_OUTPUT;
+    gpio_config(&cfg);
+    gpio_set_level(LED_GPIO, !LED_ON_LEVEL);
+    return NULL;
 }
+
+/* to here */
+
+
 
 static void app_driver_button_toggle_cb(void *arg, void *data)
 {
