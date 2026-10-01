@@ -1,0 +1,18 @@
+# ESP-IDF build output and generated config
+build/
+sdkconfig
+sdkconfig.old
+
+# Managed components (re-downloaded from dependencies.lock)
+managed_components/
+
+# Editor and OS
+.DS_Store
+.vscode/
+.idea/
+.cache/
+.clangd/
+
+# Python
+__pycache__/
+*.pyc
